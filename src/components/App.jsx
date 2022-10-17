@@ -1,4 +1,5 @@
 import {useState, useEffect} from 'react';
+import {Redirect, Route, Switch, useHistory} from 'react-router-dom';
 import Footer from './Footer';
 import Header from './Header';
 import Main from './Main';
@@ -9,6 +10,10 @@ import api from '../utils/api';
 import EditAvatarPopup from './EditAvatarPopup';
 import AddPlacePopup from './AddPlacePopup';
 import PopupWithConfirm from './PopupWithConfirm';
+import Register from './Register';
+import Login from './Login';
+import ProtectedRoute from './ProtectedRoute';
+import auth from '../utils/auth';
 
 const App = () => {
   const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = useState(false);
@@ -20,8 +25,11 @@ const App = () => {
   const [currentCard, setCurrentCard] = useState(null);
   const [currentUser, setCurrentUser] = useState({});
   const [cards, setCards] = useState([]);
+  const [userEmail, setUserEmail] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
+  const history = useHistory();
   useEffect(() => {
     const fetchCards = async () => {
       try {
@@ -44,6 +52,23 @@ const App = () => {
       }
     };
     fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const handleCheckToken = async () => {
+      try {
+        if (localStorage.getItem('token')) {
+          const token = localStorage.getItem('token');
+          const {data} = await auth.checkToken(token);
+          setUserEmail(data.email);
+          setIsAuth(true);
+          history.push('/');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    handleCheckToken();
   }, []);
 
   const handleCardClick = card => {
@@ -148,18 +173,32 @@ const App = () => {
   return (
     <CurrentUserContext.Provider value={currentUser}>
       <div className="page">
-        <Header />
-        <Main
-          onEditProfile={handleEditProfileClick}
-          onAddPlace={handleAddPlaceClick}
-          onEditAvatar={handleEditAvatarClick}
-          onCardClick={handleCardClick}
-          onCardDelete={handleDeleteCardClick}
-          cards={cards}
-          onCardLike={handleCardLike}
-        />
+        <Header isAuth={isAuth} setIsAuth={setIsAuth} userEmail={userEmail} />
+        <Switch>
+          <ProtectedRoute
+            path="/"
+            exact
+            isAuth={isAuth}
+            component={Main}
+            onEditProfile={handleEditProfileClick}
+            onAddPlace={handleAddPlaceClick}
+            onEditAvatar={handleEditAvatarClick}
+            onCardClick={handleCardClick}
+            onCardDelete={handleDeleteCardClick}
+            cards={cards}
+            onCardLike={handleCardLike}
+          />
+          <Route path="/sign-in">
+            <Login setIsAuth={setIsAuth} />
+          </Route>
+          <Route path="/sign-up">
+            <Register />
+          </Route>
+          <Route path="*">
+            {isAuth ? <Redirect to="/" /> : <Redirect to="/sign-in" />}
+          </Route>
+        </Switch>
         <Footer />
-
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onClose={closeAllPopups}
