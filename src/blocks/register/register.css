@@ -1,6 +1,11 @@
 .register {
   min-height: 85vh;
   max-width: 358px;
-  width: 100%;
   margin: 0 auto;
+}
+
+@media screen and (max-width: 400px) {
+  .register {
+    padding: 0 30px;
+  }
 }

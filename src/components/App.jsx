@@ -198,7 +198,7 @@ const App = () => {
             {isAuth ? <Redirect to="/" /> : <Redirect to="/sign-in" />}
           </Route>
         </Switch>
-        <Footer />
+        {isAuth && <Footer />}
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onClose={closeAllPopups}
