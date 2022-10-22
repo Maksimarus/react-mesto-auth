@@ -14,6 +14,7 @@ import Register from './Register';
 import Login from './Login';
 import ProtectedRoute from './ProtectedRoute';
 import auth from '../utils/auth';
+import InfoTooltip from './InfoTooltip';
 
 const App = () => {
   const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = useState(false);
@@ -30,6 +31,9 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const history = useHistory();
+
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [tooltipStatus, setTooltipStatus] = useState(false);
   useEffect(() => {
     const fetchCards = async () => {
       try {
@@ -69,7 +73,7 @@ const App = () => {
       }
     };
     handleCheckToken();
-  }, []);
+  }, [isAuth]);
 
   const handleCardClick = card => {
     setSelectedCard(card);
@@ -92,25 +96,9 @@ const App = () => {
     setIsEditProfilePopupOpen(false);
     setIsAddPlacePopupOpen(false);
     setIsDeleteCardPopupOpen(false);
+    setIsTooltipOpen(false);
     setSelectedCard(null);
   };
-
-  const isOpen =
-    isEditAvatarPopupOpen ||
-    isEditProfilePopupOpen ||
-    isAddPlacePopupOpen ||
-    selectedCard;
-  useEffect(() => {
-    const closeByEscape = e => {
-      if (e.key === 'Escape') closeAllPopups();
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', closeByEscape);
-      return () => {
-        document.removeEventListener('keydown', closeByEscape);
-      };
-    }
-  }, [isOpen]);
 
   const handleUpdateUser = async ({name, about}) => {
     setIsLoading(true);
@@ -170,10 +158,19 @@ const App = () => {
     }
   };
 
+  const openSuccessTooltip = () => {
+    setTooltipStatus(true);
+    setIsTooltipOpen(true);
+  };
+  const openFailTooltip = () => {
+    setTooltipStatus(false);
+    setIsTooltipOpen(true);
+  };
+
   return (
     <CurrentUserContext.Provider value={currentUser}>
       <div className="page">
-        <Header isAuth={isAuth} setIsAuth={setIsAuth} userEmail={userEmail} />
+        <Header setIsAuth={setIsAuth} userEmail={userEmail} />
         <Switch>
           <ProtectedRoute
             path="/"
@@ -192,13 +189,21 @@ const App = () => {
             <Login setIsAuth={setIsAuth} />
           </Route>
           <Route path="/sign-up">
-            <Register />
+            <Register
+              openSuccessTooltip={openSuccessTooltip}
+              openFailTooltip={openFailTooltip}
+            />
           </Route>
           <Route path="*">
             {isAuth ? <Redirect to="/" /> : <Redirect to="/sign-in" />}
           </Route>
         </Switch>
         {isAuth && <Footer />}
+        <InfoTooltip
+          status={tooltipStatus}
+          isOpen={isTooltipOpen}
+          onClose={closeAllPopups}
+        />
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onClose={closeAllPopups}
